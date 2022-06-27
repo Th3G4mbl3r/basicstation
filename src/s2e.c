@@ -1008,6 +1008,14 @@ static int handle_router_config (s2ctx_t* s2ctx, ujdec_t* D) {
                 region_s = "AS923-1";
                 // FALL THRU
             }
+            case J_AS923: { // Added by rohit for debug purposes. To handle region AS923 in case that is the value being sent.
+                LOG(MOD_S2E|WARNING, "Reached region handler: %s", region_s);
+                s2ctx->ccaEnabled = 1;
+                s2ctx->canTx = s2e_canTxPerChnlDC;
+                s2ctx->txpow = 13 * TXPOW_SCALE;
+                resetDC(s2ctx, 10);      // 10%
+                break;
+            }
             case J_AS923_1: { // common region name
                 s2ctx->ccaEnabled = 1;
                 s2ctx->canTx = s2e_canTxPerChnlDC;
@@ -1029,6 +1037,7 @@ static int handle_router_config (s2ctx_t* s2ctx, ujdec_t* D) {
                 break;
             }
             default: {
+                LOG(MOD_S2E|WARNING, "Reached the case for unknown region: %s - ignored", J_region); //Added by rohit for debug purposes.
                 LOG(MOD_S2E|WARNING, "Unrecognized region: %s - ignored", region_s);
                 s2ctx->txpow = 14 * TXPOW_SCALE;
                 region = 0;
@@ -1791,6 +1800,7 @@ int s2e_onMsg (s2ctx_t* s2ctx, char* json, ujoff_t jsonlen) {
         LOG(MOD_S2E|ERROR, "Parsing of JSON message failed - ignored");
         return 1;   // return fail? would trigger a reconnect
     }
+    LOG(MOD_S2E|DEBUG, "Incoming JSON message is '%.*s'", jsonlen, json);  // Added by rohit for debugging purposes.
     if( s2ctx->region == 0 && (msgtype == J_dnmsg || msgtype == J_dnsched || msgtype == J_dnframe) ) {
         // Might happen if messages are still queued
         LOG(MOD_S2E|WARNING, "Received '%.*s' before 'router_config' - dropped", D.str.len, D.str.beg);
